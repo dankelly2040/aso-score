@@ -1,6 +1,15 @@
 "use dom";
 
 import { useState, useEffect } from "react";
+import {
+  scoreApp,
+  parseAppleUrl,
+  CATEGORIES,
+  type AppData,
+  type ScoreResult,
+  type CategoryKey,
+  type Check,
+} from "@aso/core";
 
 function GithubIcon({ size = 13 }: { size?: number }) {
   return (
@@ -58,299 +67,11 @@ function CheckIcon({ size = 13 }: { size?: number }) {
   );
 }
 
-const CATEGORIES: Record<string, { label: string; weight: number }> = {
-  title: { label: "Title & subtitle", weight: 20 },
-  description: { label: "Description", weight: 20 },
-  visuals: { label: "Visual assets", weight: 25 },
-  social: { label: "Social proof", weight: 15 },
-  freshness: { label: "Freshness & trust", weight: 10 },
-  localization: { label: "Localization", weight: 10 },
-};
-
-function parseAppStoreInput(input: string) {
-  const trimmed = input.trim();
-  const urlMatch = trimmed.match(/\/id(\d+)/);
-  if (urlMatch) return { id: urlMatch[1], country: extractCountry(trimmed) };
-  if (/^\d+$/.test(trimmed)) return { id: trimmed, country: "us" };
-  return null;
-}
-
-function extractCountry(url: string) {
-  const m = url.match(/apps\.apple\.com\/([a-z]{2})\//i);
-  return m ? m[1].toLowerCase() : "us";
-}
-
-async function fetchAppData(id: string, country: string) {
+async function fetchAppData(id: string, country: string): Promise<AppData> {
   const res = await fetch(`/api/fetch-app?id=${id}&country=${country}`);
   const data = await res.json();
   if (!res.ok) throw new Error(data.error || `Lookup failed: ${res.status}`);
-  return data;
-}
-
-function countSeparators(s: string) {
-  return (s.match(/[|:\-–—]/g) || []).length;
-}
-
-function scoreApp(app: any) {
-  const checks: any[] = [];
-
-  const title = app.trackName || "";
-  const subtitle: string | null = app.subtitle ?? null;
-
-  checks.push({
-    cat: "title",
-    key: "title-length",
-    label: "Title length \u2264 30 characters",
-    status: title.length === 0 ? "fail" : title.length <= 30 ? "pass" : "partial",
-    weight: 8,
-    detail: `Your title is ${title.length} characters. Apple truncates at 30.`,
-    fix: title.length > 30 ? `Shorten your title from "${title}" to 30 characters or fewer. Put the most important keyword first.` : null,
-  });
-
-  const subtitleLen = subtitle ? subtitle.length : 0;
-  checks.push({
-    cat: "title",
-    key: "subtitle-present",
-    label: "Subtitle present and using full 30 chars",
-    status:
-      subtitle === null
-        ? "unknown"
-        : subtitleLen === 0
-        ? "fail"
-        : subtitleLen >= 20 && subtitleLen <= 30
-        ? "pass"
-        : "partial",
-    weight: 8,
-    detail:
-      subtitle === null
-        ? "Could not read subtitle \u2014 App Store page scrape failed."
-        : subtitleLen === 0
-        ? "No subtitle set. Subtitles are 30-character keyword slots."
-        : `Subtitle: "${subtitle}" (${subtitleLen}/30 chars).`,
-    fix:
-      subtitleLen === 0
-        ? "Add a 30-character subtitle with keyword-rich value prop. Don't waste it on fluff like 'The official app'."
-        : subtitleLen > 0 && subtitleLen < 20
-        ? `Your subtitle is only ${subtitleLen} chars \u2014 you're leaving ${30 - subtitleLen} valuable keyword characters on the table.`
-        : null,
-  });
-
-  checks.push({
-    cat: "title",
-    key: "no-keyword-stuffing",
-    label: "No keyword stuffing in title",
-    status: countSeparators(title) > 2 ? "fail" : countSeparators(title) === 2 ? "partial" : "pass",
-    weight: 4,
-    detail: countSeparators(title) > 1 ? "Title has multiple separators, suggesting keyword stuffing." : "Title reads naturally.",
-    fix: countSeparators(title) > 2 ? "Remove keyword-stuffing separators (|, -, :). Apple's algorithm rewards clean brand-first titles." : null,
-  });
-
-  const description = app.description || "";
-  const firstLines = description.split(/\n/).slice(0, 3).join(" ").trim();
-  const firstLineLength = firstLines.length;
-
-  checks.push({
-    cat: "description",
-    key: "desc-length",
-    label: "Description length (800+ characters)",
-    status: description.length >= 1500 ? "pass" : description.length >= 800 ? "partial" : "fail",
-    weight: 5,
-    detail: `Description is ${description.length} characters. Aim for 1,500-3,500 to cover features and keywords without rambling.`,
-    fix: description.length < 800 ? "Your description is too short. Expand to at least 1,500 characters covering: hook (3 lines), key features, social proof, and CTA." : null,
-  });
-
-  checks.push({
-    cat: "description",
-    key: "desc-hook",
-    label: "First 3 lines form a hook",
-    status: firstLineLength > 80 && firstLineLength < 400 ? "pass" : firstLineLength > 40 ? "partial" : "fail",
-    weight: 8,
-    detail: `Your first 3 lines are ${firstLineLength} characters. Users see this before tapping "more".`,
-    fix: firstLineLength < 80 ? "Rewrite your first 3 lines. This is the only copy 95% of visitors read. Lead with the benefit, not the company name." : null,
-  });
-
-  checks.push({
-    cat: "description",
-    key: "desc-structure",
-    label: "Uses formatting (bullets, sections)",
-    status: /[•●▪️★▶►→✓✔]|^[-*]/m.test(description) ? "pass" : "partial",
-    weight: 4,
-    detail: /[•●▪️★▶►→✓✔]|^[-*]/m.test(description) ? "Description uses visual separators." : "Flat text is hard to scan. Bullets and sections improve conversion.",
-    fix: !/[•●▪️★▶►→✓✔]|^[-*]/m.test(description) ? "Break your description into scannable sections with bullets (\u2022) for features. Consider headers in CAPS for key sections." : null,
-  });
-
-  checks.push({
-    cat: "description",
-    key: "desc-cta",
-    label: "Contains a call-to-action",
-    status: /download|try|start|join|get started|sign up/i.test(description) ? "pass" : "fail",
-    weight: 3,
-    detail: /download|try|start|join|get started|sign up/i.test(description) ? "CTA detected." : "No clear CTA found.",
-    fix: !/download|try|start|join|get started|sign up/i.test(description) ? "Add a clear CTA near the top and bottom of your description (e.g., 'Download now and start free')." : null,
-  });
-
-  const iphoneCount: number | null = app.iphoneScreenshotCount ?? null;
-  const ipadCount: number | null = app.ipadScreenshotCount ?? null;
-  const hasVideo: boolean | null = app.hasPreviewVideo ?? null;
-  const hasIcon = Boolean(app.artworkUrl512 || app.artworkUrl100);
-
-  checks.push({
-    cat: "visuals",
-    key: "icon",
-    label: "High-resolution icon present",
-    status: hasIcon ? "pass" : "fail",
-    weight: 5,
-    detail: hasIcon ? "Icon detected." : "No icon found.",
-    fix: !hasIcon ? "Upload a high-res app icon (1024\u00d71024). This is your single most important asset." : null,
-  });
-
-  checks.push({
-    cat: "visuals",
-    key: "screenshot-count",
-    label: "5+ iPhone screenshots",
-    status:
-      iphoneCount === null
-        ? "unknown"
-        : iphoneCount >= 5
-        ? "pass"
-        : iphoneCount >= 3
-        ? "partial"
-        : "fail",
-    weight: 10,
-    detail:
-      iphoneCount === null
-        ? "Could not read screenshot count \u2014 App Store page scrape failed."
-        : `${iphoneCount} iPhone screenshot(s). Apple allows up to 10.`,
-    fix:
-      iphoneCount !== null && iphoneCount < 5
-        ? `Upload ${10 - iphoneCount} more screenshots, up to the 10 maximum. Screenshots 1-3 drive conversion; 4-10 reinforce features.`
-        : null,
-  });
-
-  checks.push({
-    cat: "visuals",
-    key: "ipad-screenshots",
-    label: "iPad screenshots provided",
-    status:
-      ipadCount === null
-        ? "unknown"
-        : ipadCount >= 3
-        ? "pass"
-        : ipadCount > 0
-        ? "partial"
-        : "fail",
-    weight: 3,
-    detail:
-      ipadCount === null
-        ? "Could not read iPad screenshots \u2014 App Store page scrape failed."
-        : `${ipadCount} iPad screenshot(s). If your app runs on iPad, you need these.`,
-    fix:
-      ipadCount !== null && ipadCount < 3
-        ? "Add iPad-specific screenshots. Apple penalizes apps that reuse iPhone screenshots on iPad listings."
-        : null,
-  });
-
-  checks.push({
-    cat: "visuals",
-    key: "video-preview",
-    label: "App preview video",
-    status: hasVideo === null ? "unknown" : hasVideo ? "pass" : "fail",
-    weight: 7,
-    detail:
-      hasVideo === null
-        ? "Could not read preview video \u2014 App Store page scrape failed."
-        : hasVideo
-        ? "App preview video detected."
-        : "No app preview video found.",
-    fix:
-      hasVideo === false
-        ? "Add a 15-30 second app preview video. Listings with videos convert 25-35% better than those without."
-        : null,
-  });
-
-  const rating = app.averageUserRating || 0;
-  const ratingCount = app.userRatingCount || 0;
-
-  checks.push({
-    cat: "social",
-    key: "rating",
-    label: "Average rating \u2265 4.0",
-    status: rating >= 4.5 ? "pass" : rating >= 4.0 ? "partial" : "fail",
-    weight: 8,
-    detail: rating > 0 ? `Current rating: ${rating.toFixed(1)} \u2605` : "No rating yet.",
-    fix: rating < 4.0 && rating > 0 ? "Rating below 4.0 suppresses rankings. Implement an in-app prompt using SKStoreReviewController at moments of user success, never after errors." : null,
-  });
-
-  checks.push({
-    cat: "social",
-    key: "rating-count",
-    label: "500+ ratings",
-    status: ratingCount >= 1000 ? "pass" : ratingCount >= 500 ? "partial" : ratingCount >= 100 ? "partial" : "fail",
-    weight: 7,
-    detail: `${ratingCount.toLocaleString()} rating(s). Volume signals trust and social proof.`,
-    fix: ratingCount < 500 ? "Trigger ratings prompts more aggressively at moments of user delight (post-purchase, after goal completion, after 3+ sessions). Use the App Store Connect 3x-per-365-days limit fully." : null,
-  });
-
-  const updateDate = app.currentVersionReleaseDate ? new Date(app.currentVersionReleaseDate) : null;
-  const daysSinceUpdate = updateDate ? Math.floor((Date.now() - updateDate.getTime()) / (1000 * 60 * 60 * 24)) : 999;
-
-  checks.push({
-    cat: "freshness",
-    key: "recent-update",
-    label: "Updated in last 90 days",
-    status: daysSinceUpdate <= 30 ? "pass" : daysSinceUpdate <= 90 ? "partial" : "fail",
-    weight: 6,
-    detail: updateDate ? `Last updated ${daysSinceUpdate} days ago.` : "Update date unknown.",
-    fix: daysSinceUpdate > 90 ? "Ship an update. Apple's algorithm favors recently-updated apps. Even small bug-fix releases help." : null,
-  });
-
-  const releaseNotes = app.releaseNotes || "";
-  checks.push({
-    cat: "freshness",
-    key: "release-notes",
-    label: "Substantive release notes",
-    status: releaseNotes.length >= 100 ? "pass" : releaseNotes.length >= 30 ? "partial" : "fail",
-    weight: 4,
-    detail: `Release notes are ${releaseNotes.length} characters. "Bug fixes and improvements" is a red flag.`,
-    fix: releaseNotes.length < 100 ? "Write specific release notes. 'Bug fixes and improvements' signals a low-effort team to users. Call out 2-3 concrete changes." : null,
-  });
-
-  const languages = app.languageCodesISO2A || [];
-  checks.push({
-    cat: "localization",
-    key: "language-count",
-    label: "Localized in 5+ languages",
-    status: languages.length >= 10 ? "pass" : languages.length >= 5 ? "partial" : "fail",
-    weight: 10,
-    detail: `Available in ${languages.length} language(s): ${languages.slice(0, 8).join(", ")}${languages.length > 8 ? "\u2026" : ""}`,
-    fix: languages.length < 5 ? "Localize your listing into at least 5 languages. Start with Spanish, Portuguese (BR), German, Japanese, and French, each unlocks millions of search impressions." : null,
-  });
-
-  const catScores: Record<string, { earned: number; total: number; pct: number }> = {};
-  Object.keys(CATEGORIES).forEach(cat => {
-    const catChecks = checks.filter(c => c.cat === cat && c.status !== "unknown");
-    const totalWeight = catChecks.reduce((s, c) => s + c.weight, 0);
-    const earned = catChecks.reduce((s, c) => {
-      const mult = c.status === "pass" ? 1 : c.status === "partial" ? 0.5 : 0;
-      return s + c.weight * mult;
-    }, 0);
-    catScores[cat] = {
-      earned: Math.round(earned),
-      total: totalWeight,
-      pct: totalWeight > 0 ? Math.round((earned / totalWeight) * 100) : 0,
-    };
-  });
-
-  const totalScore = Object.keys(CATEGORIES).reduce((sum, cat) => {
-    const { weight } = CATEGORIES[cat];
-    return sum + (catScores[cat].pct / 100) * weight;
-  }, 0);
-
-  return {
-    score: Math.round(totalScore),
-    checks,
-    categoryScores: catScores,
-  };
+  return data as AppData;
 }
 
 function useTheme() {
@@ -422,7 +143,7 @@ function ScoreRing({ score, size = 180, stroke = 10, t }: { score: number; size?
   );
 }
 
-function CategoryBar({ cat, score, t }: { cat: string; score: { earned: number; total: number; pct: number }; t: ReturnType<typeof getTokens> }) {
+function CategoryBar({ cat, score, t }: { cat: CategoryKey; score: { earned: number; total: number; pct: number }; t: ReturnType<typeof getTokens> }) {
   const color = score.pct >= 80 ? t.green : score.pct >= 50 ? t.amber : t.red;
   return (
     <div>
@@ -477,9 +198,9 @@ export default function ASOScoreDOM({}: Props) {
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [app, setApp] = useState<any>(null);
-  const [result, setResult] = useState<any>(null);
-  const [activeCategory, setActiveCategory] = useState<string | null>(null);
+  const [app, setApp] = useState<AppData | null>(null);
+  const [result, setResult] = useState<ScoreResult | null>(null);
+  const [activeCategory, setActiveCategory] = useState<CategoryKey | null>(null);
   const [aiRecs, setAiRecs] = useState<string | null>(null);
   const [aiSources, setAiSources] = useState<{ label: string; url: string }[] | null>(null);
   const [aiLoading, setAiLoading] = useState(false);
@@ -522,7 +243,7 @@ export default function ASOScoreDOM({}: Props) {
     setApp(null);
     setAiRecs(null);
 
-    const parsed = parseAppStoreInput(input);
+    const parsed = parseAppleUrl(input);
     if (!parsed) {
       setError("Please enter a valid App Store URL (like https://apps.apple.com/us/app/.../id123456789) or an app ID.");
       return;
@@ -534,7 +255,11 @@ export default function ASOScoreDOM({}: Props) {
       const scored = scoreApp(appData);
       setApp(appData);
       setResult(scored);
-      setActiveCategory(Object.keys(CATEGORIES).find(c => scored.categoryScores[c].pct < 80) || "title");
+      setActiveCategory(
+        (Object.keys(CATEGORIES) as CategoryKey[]).find(
+          (c) => scored.categoryScores[c].pct < 80,
+        ) || "title",
+      );
     } catch (err: any) {
       setError(err.message || "Something went wrong fetching that app.");
     } finally {
@@ -549,8 +274,8 @@ export default function ASOScoreDOM({}: Props) {
     setAiSources(null);
 
     const failedChecks = result.checks
-      .filter((c: any) => c.status !== "pass" && c.fix)
-      .map((c: any) => ({ status: c.status, label: c.label, fix: c.fix }));
+      .filter((c: Check) => c.status !== "pass" && c.fix)
+      .map((c: Check) => ({ status: c.status, label: c.label, fix: c.fix }));
 
     const payload = {
       app: {
@@ -590,8 +315,8 @@ export default function ASOScoreDOM({}: Props) {
     setTimeout(() => setCopied(false), 2000);
   }
 
-  const passCount = result ? result.checks.filter((c: any) => c.status === "pass").length : 0;
-  const totalChecks = result ? result.checks.filter((c: any) => c.status !== "unknown").length : 0;
+  const passCount = result ? result.checks.filter((c: Check) => c.status === "pass").length : 0;
+  const totalChecks = result ? result.checks.filter((c: Check) => c.status !== "unknown").length : 0;
 
   return (
     <div style={{ minHeight: "100vh", width: "100%", background: t.bg, color: t.fg, fontFamily: "Inter, system-ui, sans-serif" }}>
@@ -689,7 +414,7 @@ export default function ASOScoreDOM({}: Props) {
                 </div>
               </div>
               <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 18 }}>
-                {Object.keys(CATEGORIES).map(c => (
+                {(Object.keys(CATEGORIES) as CategoryKey[]).map((c) => (
                   <div key={c} onClick={() => setActiveCategory(c)} style={{ cursor: "pointer" }}>
                     <CategoryBar cat={c} score={result.categoryScores[c]} t={t} />
                   </div>
@@ -701,7 +426,7 @@ export default function ASOScoreDOM({}: Props) {
           {/* Category tabs + checks */}
           <div style={{ marginTop: 24, background: t.cardBg, border: `1px solid ${t.border}`, borderRadius: 16, overflow: "hidden" }}>
             <div style={{ display: "flex", borderBottom: `1px solid ${t.borderSoft}`, padding: "0 8px", gap: 2, overflowX: "auto" }}>
-              {Object.keys(CATEGORIES).map(c => (
+              {(Object.keys(CATEGORIES) as CategoryKey[]).map((c) => (
                 <button key={c} onClick={() => setActiveCategory(c)} style={{ background: "transparent", border: 0, padding: "16px 14px", fontSize: 13, fontFamily: "Inter, system-ui, sans-serif", fontWeight: 500, color: activeCategory === c ? t.fg : t.fgMuted, borderBottom: activeCategory === c ? `2px solid ${t.fg}` : "2px solid transparent", cursor: "pointer", whiteSpace: "nowrap" }}>
                   {CATEGORIES[c].label}
                   <span style={{ marginLeft: 6, fontSize: 11, color: t.fgSubtle, fontVariantNumeric: "tabular-nums" }}>{result.categoryScores[c].pct}%</span>
@@ -709,7 +434,7 @@ export default function ASOScoreDOM({}: Props) {
               ))}
             </div>
             <div style={{ padding: 8 }}>
-              {result.checks.filter((c: any) => c.cat === activeCategory).map((check: any) => (
+              {result.checks.filter((c: Check) => c.cat === activeCategory).map((check: Check) => (
                 <div key={check.key} style={{ padding: "18px 20px", borderRadius: 10, display: "flex", gap: 14, alignItems: "flex-start" }}>
                   <div style={{ paddingTop: 1 }}><StatusIcon status={check.status} size={18} t={t} /></div>
                   <div style={{ flex: 1 }}>
