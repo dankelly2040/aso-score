@@ -194,9 +194,14 @@ function ExpoTopNav({ t }: { t: ReturnType<typeof getTokens> }) {
 
 interface Props {
   dom?: import("expo/dom").DOMProps;
+  /**
+   * Optional App Store URL or ID to auto-scan on mount. Used by the
+   * Chrome extension's "Open full report" deep-link.
+   */
+  initialUrl?: string;
 }
 
-export default function ASOScoreDOM({}: Props) {
+export default function ASOScoreDOM({ initialUrl }: Props) {
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -238,14 +243,24 @@ export default function ASOScoreDOM({}: Props) {
     document.body.style.background = t.bg;
   }, [t.bg]);
 
-  async function handleScan(e: any) {
+  // Auto-scan when the home route passes an `initialUrl` in from
+  // ?id=...&country=... query params (the extension's deep-link).
+  useEffect(() => {
+    if (!initialUrl) return;
+    setInput(initialUrl);
+    handleScan(null, initialUrl);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [initialUrl]);
+
+  async function handleScan(e: any, urlOverride?: string) {
     if (e) e.preventDefault();
     setError(null);
     setResult(null);
     setApp(null);
     setAiRecs(null);
 
-    const parsed = parseAppleUrl(input);
+    const source = urlOverride ?? input;
+    const parsed = parseAppleUrl(source);
     if (!parsed) {
       setError("Please enter a valid App Store URL (like https://apps.apple.com/us/app/.../id123456789) or an app ID.");
       return;
