@@ -5,6 +5,8 @@ import {
   scoreApp,
   parseAppleUrl,
   CATEGORIES,
+  estimateDownloads,
+  formatDownloadCount,
   type AppData,
   type ScoreResult,
   type CategoryKey,
@@ -317,6 +319,7 @@ export default function ASOScoreDOM({}: Props) {
 
   const passCount = result ? result.checks.filter((c: Check) => c.status === "pass").length : 0;
   const totalChecks = result ? result.checks.filter((c: Check) => c.status !== "unknown").length : 0;
+  const downloadEstimate = app ? estimateDownloads(app) : null;
 
   return (
     <div style={{ minHeight: "100vh", width: "100%", background: t.bg, color: t.fg, fontFamily: "Inter, system-ui, sans-serif" }}>
@@ -413,6 +416,28 @@ export default function ASOScoreDOM({}: Props) {
                   </div>
                 </div>
               </div>
+              {downloadEstimate && (
+                <div
+                  title={`Estimate: ${downloadEstimate.method}. Confidence: ${downloadEstimate.confidence}.`}
+                  style={{
+                    display: "inline-flex",
+                    alignItems: "center",
+                    gap: 6,
+                    padding: "4px 10px",
+                    borderRadius: 999,
+                    background: t.blueBg,
+                    color: t.blueFg,
+                    fontSize: 12,
+                    fontWeight: 500,
+                    marginBottom: 16,
+                  }}
+                >
+                  \u2248 {formatDownloadCount(downloadEstimate.monthly)} installs/mo
+                  <span style={{ opacity: 0.65, fontWeight: 400 }}>
+                    \u00b7 {downloadEstimate.confidence} confidence
+                  </span>
+                </div>
+              )}
               <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 18 }}>
                 {(Object.keys(CATEGORIES) as CategoryKey[]).map((c) => (
                   <div key={c} onClick={() => setActiveCategory(c)} style={{ cursor: "pointer" }}>
