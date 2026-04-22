@@ -1,0 +1,22 @@
+/* Popup baseline. Deliberately minimal — component-level styles live
+   inline in App.tsx for now; we'll swap in CSS modules when the UI
+   lands in the next commit. */
+:root {
+  color-scheme: light dark;
+}
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+  background: #fff;
+  color: #202020;
+}
+
+@media (prefers-color-scheme: dark) {
+  html,
+  body {
+    background: #0e0e0e;
+    color: #eee;
+  }
+}
