@@ -36,13 +36,11 @@ export default defineConfig({
     action: {
       default_title: "Grade this App Store listing",
     },
-    // TODO (Chrome Web Store submission): add icons at 16/32/48/128 PNG in
-    // public/icon/ and restore the `icons` key below.
-    //   icons: {
-    //     16: "icon/16.png",
-    //     32: "icon/32.png",
-    //     48: "icon/48.png",
-    //     128: "icon/128.png",
-    //   }
+    icons: {
+      16: "icon/16.png",
+      32: "icon/32.png",
+      48: "icon/48.png",
+      128: "icon/128.png",
+    },
   },
 });

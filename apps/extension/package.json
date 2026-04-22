@@ -12,6 +12,7 @@
     "zip": "wxt zip",
     "zip:firefox": "wxt zip -b firefox",
     "compile": "tsc --noEmit",
+    "make:icons": "node scripts/make-icons.mjs",
     "postinstall": "wxt prepare"
   },
   "dependencies": {
@@ -20,6 +21,7 @@
     "react-dom": "^19.1.0"
   },
   "devDependencies": {
+    "@resvg/resvg-js": "^2.6.2",
     "@types/chrome": "^0.0.287",
     "@types/react": "~19.1.0",
     "@types/react-dom": "~19.1.0",
