@@ -25,7 +25,7 @@ export const PARTIFUL_FIXTURE: AppData = {
   primaryGenreName: "Social Networking",
   artworkUrl100: "https://example.com/icon-100.png",
   artworkUrl512: "https://example.com/icon-512.png",
-  trackId: 1479433002,
+  trackId: 1662982304,
   subtitle: "Plan parties people show up to",
   iphoneScreenshotCount: 7,
   ipadScreenshotCount: 4,

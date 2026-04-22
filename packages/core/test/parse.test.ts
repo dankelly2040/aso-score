@@ -13,8 +13,8 @@ import { parseAppleUrl } from "../src/parse";
 describe("parseAppleUrl", () => {
   it("parses a full apps.apple.com URL", () => {
     expect(
-      parseAppleUrl("https://apps.apple.com/us/app/partiful/id1479433002"),
-    ).toEqual({ id: "1479433002", country: "us" });
+      parseAppleUrl("https://apps.apple.com/us/app/partiful/id1662982304"),
+    ).toEqual({ id: "1662982304", country: "us" });
   });
 
   it("parses URLs without protocol", () => {
@@ -25,13 +25,13 @@ describe("parseAppleUrl", () => {
 
   it("trims whitespace", () => {
     expect(
-      parseAppleUrl("  https://apps.apple.com/us/app/partiful/id1479433002  "),
-    ).toEqual({ id: "1479433002", country: "us" });
+      parseAppleUrl("  https://apps.apple.com/us/app/partiful/id1662982304  "),
+    ).toEqual({ id: "1662982304", country: "us" });
   });
 
   it("accepts a bare numeric ID and defaults country to us", () => {
-    expect(parseAppleUrl("1479433002")).toEqual({
-      id: "1479433002",
+    expect(parseAppleUrl("1662982304")).toEqual({
+      id: "1662982304",
       country: "us",
     });
   });

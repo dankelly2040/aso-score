@@ -210,7 +210,7 @@ function NotOnStoreBlock({ t }: { t: Theme }) {
         ASO Score icon again.
       </div>
       <a
-        href="https://apps.apple.com/us/app/partiful/id1479433002"
+        href="https://apps.apple.com/us/app/partiful-party-invite-maker/id1662982304"
         target="_blank"
         rel="noopener"
         style={{

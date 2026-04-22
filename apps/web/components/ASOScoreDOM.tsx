@@ -385,7 +385,7 @@ export default function ASOScoreDOM({ initialUrl }: Props) {
           <div style={{ marginTop: 18, display: "flex", justifyContent: "center", alignItems: "center", gap: 8, fontSize: 12, color: t.fgSubtle }}>
             <span>Try</span>
             {[
-              { label: "Partiful", url: "https://apps.apple.com/us/app/partiful/id1479433002" },
+              { label: "Partiful", url: "https://apps.apple.com/us/app/partiful-party-invite-maker/id1662982304" },
               { label: "Phantom", url: "https://apps.apple.com/us/app/phantom-crypto-wallet/id1598432977" },
               { label: "Hipcamp", url: "https://apps.apple.com/us/app/hipcamp-camping-rvs-cabins/id1440066037" },
             ].map(ex => (

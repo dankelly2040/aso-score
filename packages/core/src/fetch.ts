@@ -49,12 +49,23 @@ async function fetchITunes(
   if (!res.ok) throw new Error(`iTunes lookup failed: ${res.status}`);
   const data = (await res.json()) as {
     resultCount: number;
-    results: ITunesResult[];
+    results: (ITunesResult & { kind?: string; wrapperType?: string })[];
   };
   if (!data.results || data.results.length === 0) {
     throw new Error("App not found. Double-check the URL or ID.");
   }
-  return data.results[0];
+  // iTunes Lookup ignores `entity=software` when the ID belongs to a
+  // different catalog (music album, TV show, audiobook). The returned
+  // row then has wrapperType !== "software", and our scorer would
+  // happily grade a Beyoncé single as if it were an iOS app. Reject
+  // early instead of serving garbage.
+  const hit = data.results[0];
+  if (hit.wrapperType && hit.wrapperType !== "software") {
+    throw new Error(
+      `That ID belongs to a ${hit.wrapperType}, not an iOS app. Double-check the URL.`,
+    );
+  }
+  return hit;
 }
 
 async function fetchAppStoreHTML(

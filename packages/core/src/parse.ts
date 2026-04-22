@@ -17,9 +17,9 @@ export interface ParsedAppleUrl {
  * Parse an App Store URL or raw numeric app ID.
  *
  * Accepts:
- *   - https://apps.apple.com/us/app/partiful/id1479433002
- *   - apps.apple.com/gb/app/.../id1479433002?mt=8
- *   - 1479433002
+ *   - https://apps.apple.com/us/app/partiful/id1662982304
+ *   - apps.apple.com/gb/app/.../id1662982304?mt=8
+ *   - 1662982304
  *
  * Returns `null` for anything else (empty, bare URL without `/id`, etc.)
  * so callers can show a friendly error instead of throwing.
