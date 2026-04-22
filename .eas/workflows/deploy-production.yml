@@ -1,0 +1,21 @@
+name: Deploy to production
+
+# Triggered on every push to main once the GitHub App is installed for this
+# project: https://expo.dev/accounts/<account>/projects/aso-score/github
+# See: https://docs.expo.dev/eas/workflows/get-started/#add-github-app
+
+on:
+  push:
+    branches: ['main']
+
+jobs:
+  deploy:
+    name: Deploy web bundle to EAS Hosting
+    # Selecting the "production" EAS environment makes ANTHROPIC_API_KEY and
+    # any other sensitive vars available to the deploy job AND injects them
+    # into the deployed Cloudflare Worker runtime for the /api routes.
+    environment: production
+    type: deploy
+    params:
+      # Promote this deployment to the production alias (aso-score.expo.app).
+      prod: true

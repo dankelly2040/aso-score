@@ -90,6 +90,27 @@ The key is read in `app/api/generate-plan+api.ts` via `process.env.ANTHROPIC_API
 
 ## Deploying to EAS Hosting
 
+### Automated — pushes to `main`
+
+Every push to `main` deploys to production via an [EAS Workflow](https://docs.expo.dev/eas/workflows/get-started/). The workflow file is [`.eas/workflows/deploy-production.yml`](./.eas/workflows/deploy-production.yml):
+
+```yaml
+on:
+  push:
+    branches: ['main']
+
+jobs:
+  deploy:
+    environment: production   # injects ANTHROPIC_API_KEY + other prod env vars
+    type: deploy
+    params:
+      prod: true              # promotes to aso-score.expo.app
+```
+
+For the workflow to fire on GitHub pushes, the Expo GitHub App must be installed and this repo linked to the project. Do it once from the [Expo dashboard](https://expo.dev/) under `Projects → aso-score → GitHub`.
+
+### Manual — from your machine
+
 ```bash
 # build the web bundle
 npx expo export -p web
