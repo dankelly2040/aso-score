@@ -9,6 +9,7 @@
     "web:deploy": "pnpm --filter aso-score exec eas-cli deploy --prod --environment production --non-interactive",
     "ext:dev": "pnpm --filter aso-score-extension dev",
     "ext:build": "pnpm --filter aso-score-extension build",
-    "typecheck": "pnpm -r exec tsc --noEmit"
+    "typecheck": "pnpm -r exec tsc --noEmit",
+    "test": "pnpm --filter @aso/core test"
   }
 }
