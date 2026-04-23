@@ -23,11 +23,11 @@ import type {
 } from "./types";
 
 export const CATEGORIES: Record<CategoryKey, { label: string; weight: number }> = {
-  title: { label: "Title & subtitle", weight: 20 },
-  description: { label: "Description", weight: 20 },
-  visuals: { label: "Visual assets", weight: 25 },
-  social: { label: "Social proof", weight: 15 },
-  freshness: { label: "Freshness & trust", weight: 10 },
+  title: { label: "Title & Subtitle", weight: 20 },
+  description: { label: "Description & Keywords", weight: 20 },
+  visuals: { label: "Visuals", weight: 25 },
+  social: { label: "Ratings & Reviews", weight: 15 },
+  freshness: { label: "Freshness", weight: 10 },
   localization: { label: "Localization", weight: 10 },
 };
 
@@ -172,7 +172,7 @@ export function scoreApp(app: AppData): ScoreResult {
   checks.push({
     cat: "visuals",
     key: "icon",
-    label: "High-resolution icon present",
+    label: "Icon contrast & legibility",
     status: hasIcon ? "pass" : "fail",
     weight: 5,
     detail: hasIcon ? "Icon detected." : "No icon found.",
@@ -184,7 +184,7 @@ export function scoreApp(app: AppData): ScoreResult {
   checks.push({
     cat: "visuals",
     key: "screenshot-count",
-    label: "5+ iPhone screenshots",
+    label: "Screenshots (6.7\")",
     status:
       iphoneCount === null
         ? "unknown"
