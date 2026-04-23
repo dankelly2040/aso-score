@@ -1,0 +1,10 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "jsx": "react-jsx",
+    "lib": ["ES2022", "DOM", "DOM.Iterable"],
+    "types": ["chrome", "wxt/browser"],
+    "noEmit": true
+  },
+  "include": ["entrypoints/**/*", "wxt.config.ts", ".wxt/**/*"]
+}

@@ -9,6 +9,13 @@ dist/
 web-build/
 expo-env.d.ts
 
+# WXT (chrome extension build output)
+.output/
+.wxt/
+
+# pnpm
+.pnpm-store/
+
 # Native
 .kotlin/
 *.orig.*

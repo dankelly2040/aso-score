@@ -1,0 +1,7 @@
+.output/
+.wxt/
+stats.html
+*.zip
+# Promo tiles / screenshots drafted for the Chrome Web Store submission —
+# out of scope for the repo.
+store-assets/
